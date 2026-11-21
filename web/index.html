@@ -1,0 +1,417 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Prompt Vault · 提示词收藏夹</title>
+<style>
+  :root {
+    --bg: #131418;
+    --panel: #1a1c22;
+    --panel-2: #20232b;
+    --line: rgba(255,255,255,.09);
+    --line-strong: rgba(255,255,255,.18);
+    --text: #e7e8ec;
+    --text-2: #9a9daa;
+    --text-3: #6d7180;
+    --accent: #6b8afd;
+    --accent-soft: rgba(107,138,253,.14);
+    --danger: #e2685f;
+    --radius: 12px;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font: 14px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", "PingFang SC", sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .app { max-width: 1040px; margin: 0 auto; padding: 28px 24px 96px; }
+
+  header { display: flex; align-items: center; gap: 14px; margin-bottom: 22px; }
+  .brand { display: flex; align-items: baseline; gap: 10px; flex: 1; min-width: 0; }
+  .brand h1 { font-size: 19px; font-weight: 600; margin: 0; letter-spacing: .2px; }
+  .brand .sub { font-size: 12px; color: var(--text-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .dot { width: 9px; height: 9px; border-radius: 50%; background: var(--accent); flex: none; align-self: center; }
+
+  .btn {
+    appearance: none; border: 1px solid var(--line-strong); background: var(--panel-2);
+    color: var(--text); padding: 8px 14px; border-radius: 9px; font-size: 13px;
+    cursor: pointer; transition: .15s ease; font-family: inherit; white-space: nowrap;
+  }
+  .btn:hover { border-color: rgba(255,255,255,.3); background: #262a33; }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: #0d1224; font-weight: 600; }
+  .btn.primary:hover { background: #7d99ff; border-color: #7d99ff; }
+  .btn.ghost { background: transparent; }
+  .btn.danger:hover { border-color: var(--danger); color: var(--danger); }
+  .btn:disabled { opacity: .5; cursor: not-allowed; }
+
+  .toolbar { margin-bottom: 14px; }
+  #search {
+    width: 100%; background: var(--panel); border: 1px solid var(--line); color: var(--text);
+    padding: 11px 14px; border-radius: 10px; font-size: 14px; font-family: inherit; outline: none;
+    transition: .15s;
+  }
+  #search::placeholder { color: var(--text-3); }
+  #search:focus { border-color: var(--accent); background: #1c1f27; }
+
+  .tags { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; min-height: 26px; }
+  .pill {
+    border: 1px solid var(--line); background: var(--panel); color: var(--text-2);
+    padding: 4px 11px; border-radius: 999px; font-size: 12.5px; cursor: pointer; transition: .15s;
+    font-family: inherit;
+  }
+  .pill:hover { color: var(--text); border-color: var(--line-strong); }
+  .pill.on { background: var(--accent-soft); border-color: var(--accent); color: #a9bcff; }
+  .pill .n { color: var(--text-3); margin-left: 5px; font-size: 11.5px; }
+
+  .list { display: grid; gap: 12px; }
+  .card {
+    background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius);
+    padding: 16px 18px; transition: .15s ease; position: relative;
+  }
+  .card:hover { border-color: var(--line-strong); background: #1c1f26; }
+  .card-head { display: flex; align-items: flex-start; gap: 12px; }
+  .card-title {
+    font-size: 15px; font-weight: 600; margin: 0 0 6px; cursor: pointer; flex: 1;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .card-title:hover { color: #a9bcff; }
+  .card-ops { display: flex; gap: 6px; flex: none; }
+  .icon-btn {
+    appearance: none; background: transparent; border: 1px solid transparent; color: var(--text-3);
+    border-radius: 7px; padding: 4px 8px; font-size: 12.5px; cursor: pointer; font-family: inherit;
+    transition: .15s;
+  }
+  .icon-btn:hover { color: var(--text); border-color: var(--line); background: var(--panel-2); }
+  .icon-btn.danger:hover { color: var(--danger); border-color: rgba(226,104,95,.4); }
+
+  .card-tags { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 9px; }
+  .tag-chip {
+    font-size: 11.5px; color: #9fb0ff; background: var(--accent-soft); border-radius: 5px;
+    padding: 2px 7px; border: 1px solid rgba(107,138,253,.25);
+  }
+  .card-body {
+    color: var(--text-2); font-size: 13px; line-height: 1.65; cursor: pointer;
+    display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+    white-space: pre-wrap; word-break: break-word;
+  }
+  .card-foot { display: flex; align-items: center; gap: 14px; margin-top: 11px; font-size: 11.5px; color: var(--text-3); }
+  .card-foot .spacer { flex: 1; }
+  .copy-hint { color: var(--text-3); }
+  .card:hover .copy-hint { color: #8fa4f5; }
+
+  .empty { text-align: center; padding: 72px 20px; color: var(--text-3); }
+  .empty strong { display: block; color: var(--text-2); font-size: 15px; font-weight: 500; margin-bottom: 8px; }
+  .empty .kbd { border: 1px solid var(--line-strong); border-radius: 5px; padding: 1px 6px; font-size: 12px; }
+
+  .modal { position: fixed; inset: 0; background: rgba(0,0,0,.6); display: flex; align-items: center; justify-content: center; padding: 24px; z-index: 50; }
+  .modal[hidden] { display: none; }
+  .sheet {
+    background: #191b21; border: 1px solid var(--line-strong); border-radius: 14px;
+    width: min(720px, 100%); max-height: 88vh; overflow: auto; padding: 22px 24px;
+  }
+  .sheet h2 { font-size: 16px; font-weight: 600; margin: 0 0 18px; }
+  .field { display: block; margin-bottom: 14px; }
+  .field span { display: block; font-size: 12px; color: var(--text-2); margin-bottom: 6px; }
+  .field input, .field textarea {
+    width: 100%; background: #12141a; border: 1px solid var(--line); color: var(--text);
+    border-radius: 9px; padding: 9px 12px; font-size: 13.5px; font-family: inherit; outline: none;
+    transition: .15s; resize: vertical;
+  }
+  .field input:focus, .field textarea:focus { border-color: var(--accent); }
+  .field textarea { line-height: 1.65; min-height: 180px; }
+  .sheet-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
+  .err { color: var(--danger); font-size: 12.5px; margin-top: -6px; margin-bottom: 12px; min-height: 1em; }
+
+  .toast {
+    position: fixed; left: 50%; bottom: 34px; transform: translateX(-50%) translateY(8px);
+    background: #262a33; border: 1px solid var(--line-strong); color: var(--text);
+    padding: 10px 18px; border-radius: 10px; font-size: 13px; opacity: 0;
+    transition: .2s ease; pointer-events: none; z-index: 60; box-shadow: 0 8px 24px rgba(0,0,0,.4);
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  .toast.ok { border-color: rgba(107,138,253,.5); }
+  .toast.bad { border-color: rgba(226,104,95,.5); }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="brand">
+      <span class="dot"></span>
+      <h1>Prompt Vault</h1>
+      <span class="sub">本地提示词收藏夹 · 数据仅存本机</span>
+    </div>
+    <button id="newBtn" class="btn primary">新建提示词</button>
+  </header>
+
+  <div class="toolbar">
+    <input id="search" type="search" autocomplete="off" placeholder="搜索标题、正文、标签…  多个关键词用空格分隔">
+  </div>
+
+  <div id="tags" class="tags"></div>
+  <div id="list" class="list"></div>
+
+  <div id="empty" class="empty" hidden>
+    <strong id="emptyTitle">还没有提示词</strong>
+    <div id="emptyDesc">点击右上角「新建提示词」，把常用的 prompt 存进来。<br>存好之后，在对话里说「用我的 XX 提示词」即可直接调用。</div>
+  </div>
+</div>
+
+<div id="modal" class="modal" hidden>
+  <div class="sheet" role="dialog" aria-modal="true">
+    <h2 id="modalTitle">新建提示词</h2>
+    <label class="field"><span>标题 *</span><input id="fTitle" maxlength="120" placeholder="例如：周报生成"></label>
+    <label class="field"><span>标签（逗号分隔）</span><input id="fTags" placeholder="例如：周报, 汇报"></label>
+    <label class="field"><span>正文 *</span><textarea id="fContent" placeholder="把完整提示词粘贴到这里"></textarea></label>
+    <label class="field"><span>说明（可选）</span><input id="fDesc" maxlength="300" placeholder="什么时候用这条"></label>
+    <div id="formErr" class="err"></div>
+    <div class="sheet-actions">
+      <button id="cancelBtn" class="btn ghost">取消</button>
+      <button id="saveBtn" class="btn primary">保存</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+const state = { q: '', tag: '', prompts: [], tags: [], editingId: null };
+
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+let toastTimer = null;
+function toast(msg, kind = 'ok') {
+  const el = $('toast');
+  el.textContent = msg;
+  el.className = 'toast show ' + kind;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { el.className = 'toast ' + kind; }, 2200);
+}
+
+async function api(path, options = {}) {
+  const res = await fetch(path, {
+    ...options,
+    headers: { 'content-type': 'application/json', ...(options.headers || {}) },
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || ('HTTP ' + res.status));
+  return data;
+}
+
+async function load() {
+  const qs = new URLSearchParams();
+  if (state.q) qs.set('q', state.q);
+  if (state.tag) qs.set('tag', state.tag);
+  try {
+    const [list, tags] = await Promise.all([
+      api('/api/prompts?' + qs.toString()),
+      api('/api/tags'),
+    ]);
+    state.prompts = list.items || [];
+    state.tags = tags.items || [];
+    render();
+  } catch (err) {
+    toast('加载失败：' + err.message, 'bad');
+  }
+}
+
+function renderTags() {
+  const box = $('tags');
+  box.innerHTML = '';
+  const all = document.createElement('button');
+  all.className = 'pill' + (state.tag ? '' : ' on');
+  all.textContent = '全部';
+  all.onclick = () => { state.tag = ''; load(); };
+  box.appendChild(all);
+
+  for (const t of state.tags) {
+    const b = document.createElement('button');
+    const on = state.tag && state.tag.toLowerCase() === String(t.tag).toLowerCase();
+    b.className = 'pill' + (on ? ' on' : '');
+    b.innerHTML = esc(t.tag) + '<span class="n">' + t.count + '</span>';
+    b.onclick = () => {
+      state.tag = on ? '' : t.tag;
+      load();
+    };
+    box.appendChild(b);
+  }
+}
+
+function renderList() {
+  const list = $('list');
+  const empty = $('empty');
+  list.innerHTML = '';
+
+  if (!state.prompts.length) {
+    empty.hidden = false;
+    const filtering = state.q || state.tag;
+    $('emptyTitle').textContent = filtering ? '没有匹配的提示词' : '还没有提示词';
+    $('emptyDesc').innerHTML = filtering
+      ? '换个关键词或标签试试，或点右上角新建。'
+      : '点击右上角「新建提示词」，把常用的 prompt 存进来。<br>存好之后，在对话里说「用我的 XX 提示词」即可直接调用。';
+    return;
+  }
+  empty.hidden = true;
+
+  for (const p of state.prompts) {
+    const card = document.createElement('div');
+    card.className = 'card';
+
+    const tagsHtml = (p.tags || []).map(t => '<span class="tag-chip">' + esc(t) + '</span>').join('');
+
+    card.innerHTML =
+      '<div class="card-head">' +
+        '<h3 class="card-title" title="点击复制">' + esc(p.title) + '</h3>' +
+        '<div class="card-ops">' +
+          '<button class="icon-btn" data-act="edit">编辑</button>' +
+          '<button class="icon-btn danger" data-act="del">删除</button>' +
+        '</div>' +
+      '</div>' +
+      (tagsHtml ? '<div class="card-tags">' + tagsHtml + '</div>' : '') +
+      '<div class="card-body">' + esc(p.preview) + '</div>' +
+      '<div class="card-foot">' +
+        '<span class="copy-hint">点击卡片复制</span>' +
+        '<span class="spacer"></span>' +
+        '<span>' + p.length + ' 字</span>' +
+        (p.usageCount ? '<span>用过 ' + p.usageCount + ' 次</span>' : '') +
+      '</div>';
+
+    const doCopy = async () => {
+      try {
+        const full = await api('/api/prompts/' + encodeURIComponent(p.id));
+        const ok = await copyText(full.content || '');
+        if (ok) toast('已复制「' + p.title + '」，到对话框 Ctrl+V 即可');
+        else toast('复制失败，请打开编辑手动复制', 'bad');
+      } catch (err) {
+        toast('读取失败：' + err.message, 'bad');
+      }
+    };
+
+    card.querySelector('.card-title').onclick = doCopy;
+    card.querySelector('.card-body').onclick = doCopy;
+
+    card.querySelector('[data-act="edit"]').onclick = async e => {
+      e.stopPropagation();
+      const full = await api('/api/prompts/' + encodeURIComponent(p.id));
+      openModal(full);
+    };
+
+    card.querySelector('[data-act="del"]').onclick = async e => {
+      e.stopPropagation();
+      if (!confirm('删除提示词「' + p.title + '」？此操作不可恢复。')) return;
+      try {
+        await api('/api/prompts/' + encodeURIComponent(p.id), { method: 'DELETE' });
+        toast('已删除');
+        load();
+      } catch (err) {
+        toast('删除失败：' + err.message, 'bad');
+      }
+    };
+
+    list.appendChild(card);
+  }
+}
+
+function render() {
+  renderTags();
+  renderList();
+  const total = state.prompts.length;
+  document.title = 'Prompt Vault · ' + total + ' 条提示词';
+}
+
+async function copyText(text) {
+  try {
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(text);
+      return true;
+    }
+  } catch { /* fall through to legacy path */ }
+  try {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    const ok = document.execCommand('copy');
+    ta.remove();
+    return ok;
+  } catch {
+    return false;
+  }
+}
+
+function openModal(prompt) {
+  state.editingId = prompt ? prompt.id : null;
+  $('modalTitle').textContent = prompt ? '编辑提示词' : '新建提示词';
+  $('fTitle').value = prompt ? prompt.title : '';
+  $('fTags').value = prompt ? (prompt.tags || []).join(', ') : '';
+  $('fContent').value = prompt ? prompt.content : '';
+  $('fDesc').value = prompt ? (prompt.description || '') : '';
+  $('formErr').textContent = '';
+  $('modal').hidden = false;
+  setTimeout(() => $('fTitle').focus(), 30);
+}
+
+function closeModal() {
+  $('modal').hidden = true;
+  state.editingId = null;
+}
+
+async function save() {
+  const title = $('fTitle').value.trim();
+  const content = $('fContent').value;
+  const tags = $('fTags').value.split(/[,，]/).map(s => s.trim()).filter(Boolean);
+  const description = $('fDesc').value.trim();
+
+  if (!title) { $('formErr').textContent = '标题不能为空'; return; }
+  if (!content.trim()) { $('formErr').textContent = '正文不能为空'; return; }
+
+  $('saveBtn').disabled = true;
+  try {
+    if (state.editingId) {
+      await api('/api/prompts/' + encodeURIComponent(state.editingId), {
+        method: 'PUT',
+        body: JSON.stringify({ title, content, tags, description }),
+      });
+      toast('已保存');
+    } else {
+      await api('/api/prompts', {
+        method: 'POST',
+        body: JSON.stringify({ title, content, tags, description }),
+      });
+      toast('已新建');
+    }
+    closeModal();
+    load();
+  } catch (err) {
+    $('formErr').textContent = err.message;
+  } finally {
+    $('saveBtn').disabled = false;
+  }
+}
+
+let searchTimer = null;
+$('search').addEventListener('input', e => {
+  clearTimeout(searchTimer);
+  const v = e.target.value;
+  searchTimer = setTimeout(() => { state.q = v.trim(); load(); }, 180);
+});
+$('newBtn').onclick = () => openModal(null);
+$('cancelBtn').onclick = closeModal;
+$('saveBtn').onclick = save;
+$('modal').addEventListener('click', e => { if (e.target.id === 'modal') closeModal(); });
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && !$('modal').hidden) closeModal();
+  if ((e.ctrlKey || e.metaKey) && e.key === 'Enter' && !$('modal').hidden) save();
+  if (e.key === 'n' && (e.ctrlKey || e.metaKey) && $('modal').hidden) { e.preventDefault(); openModal(null); }
+});
+
+load();
+</script>
+</body>
+</html>

@@ -1,0 +1,16 @@
+# 依赖产物，不入库（npm install 可复原）
+node_modules/
+
+# 运行时锁与损坏备份
+data/prompts.json.lock
+data/*.corrupt-*
+data/*.tmp
+
+# 日志与系统文件
+*.log
+.DS_Store
+Thumbs.db
+
+# 如果以后在 data/prompts.json 里存了私人提示词，
+# 取消下一行注释，避免把个人内容提交上去。
+# data/prompts.json

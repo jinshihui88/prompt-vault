@@ -1,0 +1,18 @@
+{
+  "name": "prompt-vault",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Local-only prompt favorites vault for WorkBuddy: MCP server + web manager",
+  "main": "server.mjs",
+  "scripts": {
+    "start": "node server.mjs",
+    "web": "node web/serve.mjs",
+    "test": "node test.mjs",
+    "test:mcp": "node test-mcp.mjs"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.32.2",
+    "zod": "^3.25.76"
+  }
+}
